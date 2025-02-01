@@ -1,0 +1,9 @@
+#.gitignore
+.env
+# Environents
+.venv
+
+# Dataset
+
+# Folder 
+venv
