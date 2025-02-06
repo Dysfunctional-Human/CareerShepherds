@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ResumeParser import ResParseGemini
+from ResumeParser import ResParse
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain.chains import LLMChain
@@ -50,7 +50,7 @@ class ResumeChecker:
           }}
           ```
         """
-        self.parser=ResParseGemini.ResumeParser()
+        self.parser=ResParse.ResumeParser()
         self.user_info = self.parser.information_parsing(pdf_path)
         self.jobDesc = jobD
         self.checker_prompt = PromptTemplate(

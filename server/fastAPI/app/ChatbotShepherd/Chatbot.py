@@ -71,7 +71,7 @@ def generate_system_prompt(user: User):
 class Chatbot_with_memory:
     def __init__(self, user_data: User):
         self.chat_model = ChatGroq(
-            model = 'deepseek-r1-distill-llama-70b',
+            model = 'deepseek-r1-distill-llama-70b',  # 128k context window
             # model='gemma2-9b-it',   # 8192 context window
             # model='mixtral-8x7b-32768',  # 32,768 context window
             # model='llama-3.1-8b-instant', # 128k context window
@@ -84,7 +84,7 @@ class Chatbot_with_memory:
         )
         self.memory = MemorySaver()
         self.trimmer = trim_messages(
-            max_tokens=3072,
+            max_tokens=10000,
             strategy="last",
             token_counter=self.chat_model,
             include_system=False,

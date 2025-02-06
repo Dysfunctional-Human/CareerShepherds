@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/../'))
 from app.FlashCard import FlashCardGen
 from app.RecommendationSystem import RecSys
 from app.ResumeChecker import ResCheck
-from app.ResumeParser import ResParseGemini
+from app.ResumeParser import ResParse
 from app.ChatbotShepherd import Chatbot
 import os
 from fastapi import FastAPI, Request, File, Form, Response
@@ -37,7 +37,7 @@ rec_data = pd.read_csv('app/fin_df.csv')
 print('Data loaded')
 course_recommender = RecSys.RecommenderSystem(rec_data)
 flash_card_generator = FlashCardGen.FlashCardGenerator()
-resume_parser = ResParseGemini.ResumeParser()
+resume_parser = ResParse.ResumeParser()
 chat_sessions: Dict[str, Chatbot.Chatbot_with_memory] = {}
 print('Classes loaded')
 
@@ -114,4 +114,4 @@ async def chat(request: ChatRequest):
 print('Endpoints operational')
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host='127.0.0.1', port=8000, reload=True)
+    uvicorn.run("main:app", host='0.0.0.0', port=8000, reload=True)
