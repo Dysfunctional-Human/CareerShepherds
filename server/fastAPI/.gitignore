@@ -1,6 +1,6 @@
 #.gitignore
 .env
-.pem
+
 # Environents
 .venv
 
@@ -8,3 +8,6 @@
 
 # Folder 
 venv
+
+# File
+shepherd.pem

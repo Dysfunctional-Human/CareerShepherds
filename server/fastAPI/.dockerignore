@@ -16,3 +16,4 @@
 **/*.log
 **/*.jpg
 **/*.pem
+shepherd.pem
