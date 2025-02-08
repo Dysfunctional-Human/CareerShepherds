@@ -64,7 +64,7 @@ def recommend_courses(user_text: dict):
     return course_recommender.recommend_courses_on_skill(user_input=user_text, num_courses=5, more=False)
 
 @app.post("/api/upload")
-async def chat(request: Request, pdf_file: bytes = File(), filename: str = Form(...)):
+async def upload(request: Request, pdf_file: bytes = File(), filename: str = Form(...)):
     global PDF_FILENAME
     PDF_FILENAME = base_folder + '/' + filename
 

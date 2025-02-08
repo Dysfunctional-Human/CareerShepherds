@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 from huggingface_hub import login
 import json
+from fastapi import HTTPException
 
 load_dotenv()    # Loading the API keys from the .env file and setting them as environment variables
 login(os.getenv('hf_key'))
@@ -52,6 +53,7 @@ class ResumeChecker:
         """
         self.parser=ResParse.ResumeParser()
         self.user_info = self.parser.resume_ocr(pdf_path)
+        self.parser.delete_file(pdf_path)
         self.jobDesc = jobD
         self.checker_prompt = PromptTemplate(
             template=self.prompt_template,
@@ -64,6 +66,8 @@ class ResumeChecker:
         
     def resume_checker(self):
         resume_text = self.user_info
+        if resume_text == "pdf_file too big":
+          raise HTTPException(status_code=500, detail="File Error: Resume has more than 2 pages")
         job_description = self.jobDesc
         checkerChain = LLMChain(llm=self.checker_model, prompt=self.checker_prompt, verbose=True)
         result = checkerChain.run({'resume_text': resume_text,

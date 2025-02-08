@@ -1,5 +1,6 @@
 from doctr.io import DocumentFile
-from doctr.models import ocr_predictor, crnn_mobilenet_v3_large, db_mobilenet_v3_large
+from doctr.models import ocr_predictor
+from fastapi import HTTPException
 from langchain_core.runnables import RunnablePassthrough
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
@@ -10,6 +11,7 @@ from huggingface_hub import login
 from dotenv import load_dotenv
 import PyPDF2
 import os
+import time
 
 load_dotenv()    # Loading the API keys from the .env file and setting them as environment variables
 login(os.getenv('hf_key'))
@@ -92,7 +94,7 @@ class ResumeParser:
       num_pages = self.count_pages(pdf_path)   
       if num_pages > 2:
         print("File Error: Resume has more than 2 pages")
-        return None
+        return "pdf_file too big"
       
       doc = DocumentFile.from_pdf(pdf_path)   
       user_info = self.ocr_model(doc)    # Performing OCR on the pdf file
@@ -109,16 +111,31 @@ class ResumeParser:
       
       return concat_data
 
+    def delete_file(self, file_path: str):
+        if os.path.exists(file_path):
+            try:
+                print(f"Attempting to delete file: {file_path}")
+                os.remove(file_path)
+                print("File successfully deleted")
+            except PermissionError:
+                print("PermissionError: The file might still be in use. Retrying...")
+                time.sleep(1)
+                try:
+                    os.remove(file_path)
+                    print("File successfully deleted after retry")
+                except Exception as e:
+                    print(f"Failed to delete file: {e}")
+        else:
+            print("The file does not exist")
+
     def information_parsing(self, pdf_path: str):
-      user_info = self.resume_ocr(pdf_path)   
+      user_info = self.resume_ocr(pdf_path) 
+      self.delete_file(pdf_path)
+      if user_info == "pdf_file too big":
+          raise HTTPException(status_code=500, detail="File Error: Resume has more than 2 pages")
       info_chain = LLMChain(llm=self.resume_parser, prompt=self.resume_parsing_prompt, verbose=True) # Giving the ocr text and prompt to the LLM for information extraction
       response = info_chain.run(text=str(user_info))
-      file_path = pdf_path
-      if os.path.exists(file_path):
-          os.remove(file_path)
-      else:
-          print("The file does not exist")
-      
+            
       try:
           ans = json.loads(response.split('json\n')[-1].split('\n```')[0])
           return ans
