@@ -14,6 +14,7 @@ export async function getRecommendations(req, res) {
             return;
         }
         let selectedSkill=selectSkill(skills);
+        console.log(`skills:${selectedSkill}`)
         const response1=await axios.post(`${FAST_API_URL}/api/recommend-courses`,{text:selectedSkill});
         selectedSkill=selectSkill(desiredSkills);
         let response2=[];

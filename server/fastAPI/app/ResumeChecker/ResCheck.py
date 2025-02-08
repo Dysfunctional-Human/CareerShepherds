@@ -51,7 +51,7 @@ class ResumeChecker:
           ```
         """
         self.parser=ResParse.ResumeParser()
-        self.user_info = self.parser.information_parsing(pdf_path)
+        self.user_info = self.parser.resume_ocr(pdf_path)
         self.jobDesc = jobD
         self.checker_prompt = PromptTemplate(
             template=self.prompt_template,

@@ -9,6 +9,7 @@ import json
 from huggingface_hub import login
 from dotenv import load_dotenv
 import PyPDF2
+import os
 
 load_dotenv()    # Loading the API keys from the .env file and setting them as environment variables
 login(os.getenv('hf_key'))
@@ -112,6 +113,11 @@ class ResumeParser:
       user_info = self.resume_ocr(pdf_path)   
       info_chain = LLMChain(llm=self.resume_parser, prompt=self.resume_parsing_prompt, verbose=True) # Giving the ocr text and prompt to the LLM for information extraction
       response = info_chain.run(text=str(user_info))
+      file_path = pdf_path
+      if os.path.exists(file_path):
+          os.remove(file_path)
+      else:
+          print("The file does not exist")
       
       try:
           ans = json.loads(response.split('json\n')[-1].split('\n```')[0])
