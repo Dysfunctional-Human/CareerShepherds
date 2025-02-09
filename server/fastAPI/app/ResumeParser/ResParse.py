@@ -129,14 +129,19 @@ class ResumeParser:
             print("The file does not exist")
 
     def information_parsing(self, pdf_path: str):
-      user_info = self.resume_ocr(pdf_path) 
-      self.delete_file(pdf_path)
-      if user_info == "pdf_file too big":
-          raise HTTPException(status_code=500, detail="File Error: Resume has more than 2 pages")
-      info_chain = LLMChain(llm=self.resume_parser, prompt=self.resume_parsing_prompt, verbose=True) # Giving the ocr text and prompt to the LLM for information extraction
-      response = info_chain.run(text=str(user_info))
-            
       try:
+          if os.path.exists(pdf_path):
+              user_info = self.resume_ocr(pdf_path) 
+              self.delete_file(pdf_path)
+          else:
+              raise HTTPException(status_code=500, detail="File Error: path doesn't exist")
+          
+          if user_info == "pdf_file too big":
+              raise HTTPException(status_code=500, detail="File Error: Resume has more than 2 pages")
+          
+          info_chain = LLMChain(llm=self.resume_parser, prompt=self.resume_parsing_prompt, verbose=True) # Giving the ocr text and prompt to the LLM for information extraction
+          response = info_chain.run(text=str(user_info))
+          
           ans = json.loads(response.split('json\n')[-1].split('\n```')[0])
           return ans
       except json.JSONDecodeError:
@@ -145,6 +150,8 @@ class ResumeParser:
              return ans2
           except json.JSONDecodeError:
              return response
+      except Exception as e:
+          print("error occured in information_parsing: ", e)
     
 # parser = ResumeParser()
 # print(parser.information_parsing('app/GuptaTheUrishita.pdf'))

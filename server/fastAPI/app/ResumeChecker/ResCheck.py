@@ -9,8 +9,7 @@ import os
 from dotenv import load_dotenv
 from huggingface_hub import login
 import json
-from fastapi import HTTPException
-
+from fastapi.responses import JSONResponse
 load_dotenv()    # Loading the API keys from the .env file and setting them as environment variables
 login(os.getenv('hf_key'))
 os.environ['GROQ_API_KEY'] = os.getenv('ResParseGroqKey')
@@ -52,8 +51,11 @@ class ResumeChecker:
           ```
         """
         self.parser=ResParse.ResumeParser()
-        self.user_info = self.parser.resume_ocr(pdf_path)
-        self.parser.delete_file(pdf_path)
+        try:
+          self.user_info = self.parser.resume_ocr(pdf_path)
+          self.parser.delete_file(pdf_path)
+        except Exception as e:
+          print("error during ocr: ", e)
         self.jobDesc = jobD
         self.checker_prompt = PromptTemplate(
             template=self.prompt_template,
@@ -65,19 +67,22 @@ class ResumeChecker:
         )
         
     def resume_checker(self):
+      try:
         resume_text = self.user_info
         if resume_text == "pdf_file too big":
-          raise HTTPException(status_code=500, detail="File Error: Resume has more than 2 pages")
+            return JSONResponse(content={"msg": "error pdf file too big"}, status_code=400)
+        
         job_description = self.jobDesc
         checkerChain = LLMChain(llm=self.checker_model, prompt=self.checker_prompt, verbose=True)
         result = checkerChain.run({'resume_text': resume_text,
                                    'job_description': job_description})
-        
         print(result)
         try:
           return json.loads(result.split('```json\n')[-1].split('\n```')[0])
         except:
           return result
+      except Exception as e:
+        print("error in resume checking: ", e)
     
 # jobD = """Proficiency in Python programming and familiarity with Computer vision libraries.Understanding of ML models and exposure to common ML libraries from basic NumPy and Scikit Learn to Keras and Tensor Flow.
 

@@ -17,6 +17,8 @@ import uvicorn
 from typing import Dict
 from pydantic import BaseModel
 import pandas as pd
+import uuid
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 base_folder = r'app/static/docs'
@@ -65,26 +67,33 @@ def recommend_courses(user_text: dict):
 
 @app.post("/api/upload")
 async def upload(request: Request, pdf_file: bytes = File(), filename: str = Form(...)):
-    global PDF_FILENAME
-    PDF_FILENAME = base_folder + '/' + filename
+    try:
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        file_path = os.path.join(base_folder, unique_filename)
+        print("unique filename: ",file_path)
 
-    async with aiofiles.open(PDF_FILENAME, 'wb') as f:
-        await f.write(pdf_file)
-    page_count = resume_parser.count_pages(PDF_FILENAME)
-    if page_count > 2:
-        return Response(jsonable_encoder(json.dumps({"msg": 'error'})))
-    response_data = jsonable_encoder(json.dumps({"msg": 'success',"PDF_FILENAME": PDF_FILENAME}))
-    res = Response(response_data)
-    return res
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(pdf_file)
+            
+        page_count = resume_parser.count_pages(file_path)
+        if page_count > 2:
+            os.remove(file_path)
+            return JSONResponse(content={"msg": "error pdf file too big"}, status_code=400)
 
-@app.get("/api/resume-parse")
-def resume_parse():
-    return resume_parser.information_parsing(pdf_path=PDF_FILENAME)
+        return JSONResponse(content={"msg": "success", "file_path": file_path})
+    except Exception as e:
+        print("error occured during upload: ", e)
+
+@app.post("/api/resume-parse")
+def resume_parse(filename: dict):
+    file_path = filename["filename"]
+    return resume_parser.information_parsing(pdf_path=file_path)
 
 @app.post("/api/resume-check")
-def resume_check(jd: dict):
-    jd = jd["text"]
-    resume_checker = ResCheck.ResumeChecker(pdf_path=PDF_FILENAME, jobD=jd)
+def resume_check(req: dict):
+    jd = req["jd"]
+    file_path = req["filename"]
+    resume_checker = ResCheck.ResumeChecker(pdf_path=file_path, jobD=jd)
     return resume_checker.resume_checker()
 
 @app.post("/api/start-chat")
