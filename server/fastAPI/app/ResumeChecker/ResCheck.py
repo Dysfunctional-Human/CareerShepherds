@@ -51,6 +51,7 @@ class ResumeChecker:
           ```
         """
         self.parser=ResParse.ResumeParser()
+        self.user_info = None
         try:
           self.user_info = self.parser.resume_ocr(pdf_path)
           self.parser.delete_file(pdf_path)
@@ -68,6 +69,9 @@ class ResumeChecker:
         
     def resume_checker(self):
       try:
+        if not self.user_info:
+            return JSONResponse(content={"msg": "Error: Unable to extract resume content"}, status_code=400)
+        
         resume_text = self.user_info
         if resume_text == "pdf_file too big":
             return JSONResponse(content={"msg": "error pdf file too big"}, status_code=400)

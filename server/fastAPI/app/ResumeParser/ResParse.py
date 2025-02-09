@@ -142,16 +142,22 @@ class ResumeParser:
           info_chain = LLMChain(llm=self.resume_parser, prompt=self.resume_parsing_prompt, verbose=True) # Giving the ocr text and prompt to the LLM for information extraction
           response = info_chain.run(text=str(user_info))
           
-          ans = json.loads(response.split('json\n')[-1].split('\n```')[0])
-          return ans
-      except json.JSONDecodeError:
           try:
-             ans2 = json.loads(response.split('```json \n')[-1].split('\n```')[0])
-             return ans2
+              ans = json.loads(response.split('json\n')[-1].split('\n```')[0])
+              print(ans)
+              return ans
           except json.JSONDecodeError:
-             return response
+                try:
+                    ans2 = json.loads(response.split('```json \n')[-1].split('\n```')[0])
+                    return ans2
+                except json.JSONDecodeError:
+                    raise HTTPException(status_code=400, detail="Parsing Error: Failed to parse JSON response")
+      except HTTPException as e:
+         print("Handled Exception:", e.detail)
+         raise e 
       except Exception as e:
-          print("error occured in information_parsing: ", e)
+         print("Unexpected error in information_parsing:", str(e))
+         raise HTTPException(status_code=500, detail="Unexpected Error: " + str(e))
     
 # parser = ResumeParser()
 # print(parser.information_parsing('app/GuptaTheUrishita.pdf'))
